@@ -781,6 +781,7 @@ Ti.include('/sisyphus/ui/LabelPrintSettingWindow.js');
 Ti.include('/sisyphus/ui/NewStoneWindow.js');
 Ti.include('/sisyphus/ui/NewBoxWindow.js');
 Ti.include('/sisyphus/ui/EditWindow.js');
+Ti.include('/sisyphus/ui/SearchWindow.js');
 //if (Ti.Platform.name == 'iPhone OS') {
 //        Ti.include('/sisyphus/ui/AddChildWindow.js');
 //}

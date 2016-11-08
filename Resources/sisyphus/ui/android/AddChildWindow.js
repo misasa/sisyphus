@@ -200,6 +200,16 @@
             onclick : function(e) { win.functions.clickScanParentButton() }
         });
 
+        win.buttons.Search = si.ui.createImageButtonView('/images/glyphicons-28-search.png', {
+            width : 90,
+            height : 90,
+            imgDimensions : 30,
+            onclick : function(e) {
+                var windowLogin = win.functions.clickSearchButton();
+                si.app.tabGroup.activeTab.open(windowLogin,{animated:true});
+            }
+        });
+
         win.buttons.Home = si.ui.createImageButtonView('/images/glyphicons-21-home.png', {
             width : 90,
             height : 90,
@@ -276,6 +286,7 @@
         viewToolLeft.add(win.buttons.Home);
         viewToolLeft.add(win.buttons.FelicaLogin);
         viewToolLeft.add(win.buttons.ScanParent);
+        viewToolRight.add(win.buttons.Search);
         viewToolRight.add(win.buttons.Print);
         viewToolRight.add(win.buttons.Camera);        
         //viewToolRight.add(win.buttons.Clip);
@@ -577,6 +588,22 @@
                 si.app.tabGroup.activeTab.open(
                     _win, {animated: true}
                 );
+            } else {
+                setTimeout(function() {
+                    loadParent(si.config.debug.parent_global_id);
+                }, 1000);
+            }
+        };
+
+        win.functions.clickSearchButton = function () {
+            if (!si.config.Medusa.debug) {
+                var _win = null;
+                _win = si.ui.createSearchWindow({
+                    onsuccess : function(){
+                        si.ui.myAlert({message: 'Search!'});
+                    }
+                });
+                return _win;
             } else {
                 setTimeout(function() {
                     loadParent(si.config.debug.parent_global_id);
