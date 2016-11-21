@@ -622,5 +622,28 @@
         });
     };
 
+    si.model.medusa.getSpecimens = function(_args) {
+        var params = "?";
+        var keys = Object.keys(_args.query);
+        for(var i in keys) {
+            var key = keys[i];
+            params += "q[" + key + "]=" + _args.query[key];
+        }
+        params += "&page=" + _args.page;
+        params += "&per_page=" + _args.per_page;
+
+        si.model.medusa.getWithAuth({
+            path : PATH_STONE + PATH_JSON + params,
+            username : Ti.App.Properties.getString('username'),
+            password : Ti.App.Properties.getString('password'),
+            onsuccess : function(_record){
+                _args.onsuccess(_record);
+            },
+            onerror : function(e) {
+                _args.onerror(e);
+            },
+        });
+    };
+
 
 })();

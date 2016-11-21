@@ -599,8 +599,9 @@
             if (!si.config.Medusa.debug) {
                 var _win = null;
                 _win = si.ui.createSearchWindow({
-                    onsuccess : function(){
-                        si.ui.myAlert({message: 'Search!'});
+                    type: 'Search',
+                    onsuccess : function(_obj){
+                        loadParent(_obj.global_id);
                     }
                 });
                 return _win;
