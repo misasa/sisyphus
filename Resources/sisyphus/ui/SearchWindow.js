@@ -1,5 +1,7 @@
 (function() {
 
+    var PER_PAGE = 25;
+
     si.ui.createSearchWindow = function(_args) {
         var isDone = null;
         var page = 1;
@@ -24,12 +26,11 @@
           borderStyle: Ti.UI.INPUT_BORDERSTYLE_ROUNDED,
           text: win.condition,
           top: 10,
-          width: '80%',
+          width: '85%',
           layout : 'horizontal'
         });
 
         win.buttons = {};
-
         win.buttons.Close = si.ui.createImageButtonView('/images/glyphicons-208-remove-2.png', {
             width : 90,
             height : 90,
@@ -112,7 +113,7 @@
             si.model.medusa.getSpecimens({
                 query: { name_cont: win.condition },
                 page: page,
-                per_page: 25,
+                per_page: PER_PAGE,
                 onsuccess : function(response) {
                     if (onSearchFlag) {
                         sections = [];
@@ -171,7 +172,7 @@
         });
 
         var sections = [];
-        var section = Ti.UI.createListSection({ headerTitle: 'Specimens'});
+        var section = Ti.UI.createListSection({ headerTitle: 'Specimens', footerView: win.buttons.Next});
         section.setItems([]);
         sections.push(section);
         listView.setSections(sections);
@@ -180,9 +181,12 @@
         win.bind = function(response){
             var loadDataSet = [];
 
+            if(response.length < PER_PAGE){
+                win.buttons.Next.enabled = false;
+            }
+
             if(response.length <= 0){
                 alert('No more Specimens.');
-                win.buttons.Next.enabled = false;
                 page--;
             } else {
                 for(var i = 0; i < response.length; i++) {
@@ -209,13 +213,11 @@
         if (_args.type === 'Search') {
             viewHeader.add(condition);
             viewHeader.add(win.buttons.Search);
-            viewBase.add(win.buttons.Next);
         }
-        viewBody.add(listView);
         viewBase.add(viewBody);
+        viewBody.add(listView);
         win.add(activityIndicator);
         win.isDone = isDone;
-
         win.search_button = win.buttons.Search;
         win.activityIndicator = activityIndicator;
 
