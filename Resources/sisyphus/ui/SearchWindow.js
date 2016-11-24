@@ -186,7 +186,7 @@
             }
 
             if(response.length <= 0){
-                alert('No more Specimens.');
+                alert('There are no more specimens.');
                 page--;
             } else {
                 for(var i = 0; i < response.length; i++) {
