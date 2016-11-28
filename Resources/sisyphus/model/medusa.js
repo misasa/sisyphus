@@ -622,18 +622,28 @@
         });
     };
 
-    si.model.medusa.getSpecimens = function(_args) {
+    si.model.medusa.getRecords = function(_args) {
         var params = "?";
+        var queries = [];
         var keys = Object.keys(_args.query);
         for(var i in keys) {
             var key = keys[i];
-            params += "q[" + key + "]=" + _args.query[key];
+            var value = _args.query[key];
+            if(value) {
+                if(Array.isArray(value)) {
+                    for(var j in value) {
+                        queries.push("q[" + key + "][]=" + value[j]);
+                    }
+                } else {
+                    queries.push("q[" + key + "]=" + value);
+                }
+            }
         }
+        params += queries.join('&');
         params += "&page=" + _args.page;
         params += "&per_page=" + _args.per_page;
-
         si.model.medusa.getWithAuth({
-            path : PATH_STONE + PATH_JSON + params,
+            path : PATH_RECORED + PATH_JSON + params,
             username : Ti.App.Properties.getString('username'),
             password : Ti.App.Properties.getString('password'),
             onsuccess : function(_record){
@@ -644,6 +654,4 @@
             },
         });
     };
-
-
 })();

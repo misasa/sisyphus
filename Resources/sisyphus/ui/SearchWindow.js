@@ -110,8 +110,8 @@
             Ti.API.info('click');
 
             activityIndicator.show();
-            si.model.medusa.getSpecimens({
-                query: { name_cont: win.condition },
+            si.model.medusa.getRecords({
+                query: { name_cont: win.condition, datum_type_in: ["Specimen", "Box"] },
                 page: page,
                 per_page: PER_PAGE,
                 onsuccess : function(response) {
