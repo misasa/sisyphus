@@ -318,6 +318,7 @@ var si = {};
 Ti.include(
     '/sisyphus/tibar.js', 
     '/sisyphus/nfc.js',
+    '/sisyphus/sqlite.js',
     '/sisyphus/BarcodeReader.js',    
     '/sisyphus/ui/ui.js', 
     '/sisyphus/model/medusa.js',
