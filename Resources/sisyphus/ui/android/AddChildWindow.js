@@ -210,6 +210,16 @@
             }
         });
 
+        win.buttons.History = si.ui.createImageButtonView('/images/glyphicons-352-book-open.png', {
+            width : 90,
+            height : 90,
+            imgDimensions : 30,
+            onclick : function(e) {
+                var windowLogin = win.functions.clickHistoryButton();
+                si.app.tabGroup.activeTab.open(windowLogin,{animated:true});
+            }
+        });
+
         win.buttons.Home = si.ui.createImageButtonView('/images/glyphicons-21-home.png', {
             width : 90,
             height : 90,
@@ -287,6 +297,7 @@
         viewToolLeft.add(win.buttons.FelicaLogin);
         viewToolLeft.add(win.buttons.ScanParent);
         viewToolRight.add(win.buttons.Search);
+        viewToolRight.add(win.buttons.History);
         viewToolRight.add(win.buttons.Print);
         viewToolRight.add(win.buttons.Camera);        
         //viewToolRight.add(win.buttons.Clip);
@@ -612,6 +623,22 @@
             }
         };
 
+        win.functions.clickHistoryButton = function () {
+            if (!si.config.Medusa.debug) {
+                var _win = null;
+                _win = si.ui.createSearchWindow({
+                    type: 'History',
+                    onsuccess : function(_obj){
+                        loadParent(_obj.global_id);
+                    }
+                });
+                return _win;
+            } else {
+                setTimeout(function() {
+                    loadParent(si.config.debug.parent_global_id);
+                }, 1000);
+            }
+        };
 
         win.functions.printLabelfor = function(_record){
             Ti.API.info('printLabelfor...');
@@ -742,6 +769,7 @@
 
         function loadParent(_global_id) {
             Ti.API.info('loadParent...');
+            var HISTORY_MAX_COUNT = 256;
             var username = Ti.App.Properties.getString('username');
             var password = Ti.App.Properties.getString('password');
 
@@ -756,6 +784,34 @@
                     viewParent.update(parent);
                     if (_global_id != Ti.App.Properties.getString('current_global_id')) {
                         Ti.App.Properties.setString('current_global_id', _global_id);
+                        try {
+                            si.sqlite.sisyphus.open();
+                            si.sqlite.sisyphus.db.execute(
+                                'delete from histories where global_id = ?',
+                                parent.global_id
+                            );
+                            si.sqlite.sisyphus.db.execute(
+                                'insert into histories (global_id, name, datum_type, description, loaded_at) values (?, ?, ?, ?, ?)',
+                                parent.global_id,
+                                parent.name,
+                                parent._className,
+                                parent['description'],
+                                Date.now()
+                            );
+                            var histories = si.sqlite.sisyphus.db.execute('select * from histories order by loaded_at desc');
+                            for (var i = 1; histories.isValidRow(); i++) {
+                                if (i > HISTORY_MAX_COUNT) {
+                                    si.sqlite.sisyphus.db.execute(
+                                        'delete from histories where global_id = ?',
+                                        histories.fieldByName('global_id')
+                                    );
+                                }
+                                histories.next();
+                            }
+                            si.sqlite.sisyphus.close();
+                        } catch (e) {
+                            alert(e.message);
+                        }
                     }
                     si.sound_reminder.play();
                     changeMode('ok', _message);

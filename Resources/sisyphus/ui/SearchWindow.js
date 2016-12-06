@@ -30,6 +30,35 @@
           layout : 'horizontal'
         });
 
+        win.dialogs = {};
+        win.dialogs.historyClearedAlert = Ti.UI.createAlertDialog({
+            title: 'Cleared.',
+            ok: 'OK'
+        });
+
+        win.dialogs.historyClearedAlert.addEventListener('click', function(e){
+            win.close();
+        });
+
+        win.dialogs.historyClearConfirm = Ti.UI.createOptionDialog({
+            title: 'Are you sure you want to clear histories?',
+            options: ['OK', 'Cancel'],
+            cancel: 1
+        });
+
+        win.dialogs.historyClearConfirm.addEventListener('click', function(e){
+            if (e.index === 0) {
+                try {
+                    si.sqlite.sisyphus.open();
+                    si.sqlite.sisyphus.db.execute('delete from histories');
+                    si.sqlite.sisyphus.close();
+                    win.dialogs.historyClearedAlert.show();
+                } catch (e) {
+                    alert(e.message);
+                }
+            }
+        });
+
         win.buttons = {};
         win.buttons.Close = si.ui.createImageButtonView('/images/glyphicons-208-remove-2.png', {
             width : 90,
@@ -39,6 +68,19 @@
             onclick : function(e) { win.close() }
         });
         win.buttons.Close.left = 0;
+
+        win.buttons.HistoryClear = Ti.UI.createButton({
+            title: 'Clear',
+            width: 300,
+            height: 90,
+            bottom: 0,
+            right: 0
+        });
+
+        win.buttons.HistoryClear.addEventListener('click',function(e)
+        {
+            win.dialogs.historyClearConfirm.show();
+        });
 
         win.buttons.Search = si.ui.createImageButtonView('/images/glyphicons-28-search.png', {
             right : 0,
@@ -100,8 +142,64 @@
             }
         };
 
+        win.bind = function(response){
+            var loadDataSet = [];
+
+            if (response.length < PER_PAGE) {
+                win.buttons.Next.enabled = false;
+            }
+            if (response.length <= 0) {
+                if (_args.type === 'Search') {
+                    alert('There are no more records.');
+                }
+                page--;
+            } else {
+                for (var i = 0; i < response.length; i++) {
+                    data = response[i];
+                    var name = data["name"];
+                    if (name.length <= 0) {
+                        name = '[no name]';
+                    }
+                    loadData = { name: { text: name }, description: { text: data.datum_attributes["description"] }, datum_type: { text: data.datum_type }, global_id: data.global_id };
+                    loadDataSet.push(loadData);
+                }
+                try {
+                    section.appendItems(loadDataSet);
+                } catch (e) {
+                    alert(e.message);
+                }
+            }
+        };
+
         win.loadHistory = function() {
-            alert('load history');
+            isDone = false;
+            win.buttons.Next.enabled = true;
+            Ti.API.info('click');
+
+            try {
+                si.sqlite.sisyphus.open();
+                var histories = si.sqlite.sisyphus.db.execute(
+                    'select * from histories order by loaded_at desc limit ? offset ?',
+                    PER_PAGE,
+                    PER_PAGE * (page - 1)
+                );
+                var records = [];
+                for (var i = 1; histories.isValidRow(); i++) {
+                    var global_id = histories.fieldByName('global_id');
+                    var name = histories.fieldByName('name');
+                    var datum_type = histories.fieldByName('datum_type');
+                    var description = histories.fieldByName('description');
+                    var record = { global_id: global_id, name: name, datum_type: datum_type, datum_attributes: { description: description } };
+                    records.push(record);
+                    histories.next();
+                }
+                win.bind(records);
+            } catch (e) {
+                alert(e.message);
+                page--;
+            }
+            si.sqlite.sisyphus.close();
+            isDone = true;
         };
 
         win.search = function(){
@@ -137,8 +235,17 @@
         };
 
         // template
-        var specimenTemplate = {
+        var recordTemplate = {
             childTemplates: [
+                {
+                    type: 'Ti.UI.Label',
+                    bindId: 'datum_type',
+                    properties: {
+                        color: 'gray',
+                        font: { fontFamily:'Arial', fontSize: '10dp' },
+                        right: '10dp', top: 0,
+                    }
+                },
                 {
                     type: 'Ti.UI.Label',
                     bindId: 'name',
@@ -161,7 +268,7 @@
         };
 
         var listView = Ti.UI.createListView({
-            templates: { 'template': specimenTemplate },
+            templates: { 'template': recordTemplate },
             defaultItemTemplate: 'template'
         });
 
@@ -172,45 +279,19 @@
         });
 
         var sections = [];
-        var section = Ti.UI.createListSection({ headerTitle: 'Specimens', footerView: win.buttons.Next});
+        var section = Ti.UI.createListSection({ headerTitle: 'Records', footerView: win.buttons.Next});
         section.setItems([]);
         sections.push(section);
         listView.setSections(sections);
         win.load();
 
-        win.bind = function(response){
-            var loadDataSet = [];
-
-            if(response.length < PER_PAGE){
-                win.buttons.Next.enabled = false;
-            }
-
-            if(response.length <= 0){
-                alert('There are no more specimens.');
-                page--;
-            } else {
-                for(var i = 0; i < response.length; i++) {
-                    data = response[i];
-                    var name = data["name"];
-                    if(name.length <= 0) {
-                        name = '[no name]';
-                    }
-                    loadData = { name: {text: name }, description: {text: data["description"]}, global_id: data.global_id };
-                    loadDataSet.push(loadData);
-                }
-                try{
-                    section.appendItems(loadDataSet);
-                } catch (e) {
-                    alert(e.message);
-                }
-            }
-        };
-
         //TODO: layout
         win.add(viewBase);
         viewBase.add(viewHeader);
         viewHeader.add(win.buttons.Close);
-        if (_args.type === 'Search') {
+        if (_args.type === 'History') {
+            viewHeader.add(win.buttons.HistoryClear);
+        } else {
             viewHeader.add(condition);
             viewHeader.add(win.buttons.Search);
         }
